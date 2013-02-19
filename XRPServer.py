@@ -1,94 +1,68 @@
+#tejask@mit.edu - MIT Probabilistic Computing Group
+
 import zmq
 import sys
-from Renderer import *
 import pdb
 
-from loadImageXRP import *
-from renderImageXRP import *
-from noisyImageCompareXRP import *
 
-# These correspond to Venture code
-LOAD_IMAGE_XRP = 1
-RENDER_XRP = 10
-NOISYCOMP_XRP = 3
+class XRPServer(object):
 
-#Global parameters
-MMU = dict()
-
-
-r = Renderer()
-
-
-class XRPServer():
 	def __init__(self):
 		self.MMU = dict()
 		self.context = zmq.Context()
 		print "Starting Server ..."
 		self.port = 4444
-		self.socket = context.socket(zmq.REP)
-		self.socket.bind("tcp://*:" + str(port))
+		self.socket = self.context.socket(zmq.REP)
+		self.socket.bind("tcp://*:" + str(self.port))
 
+	#Child class should implement this - contains dictionary of custom Objects per XRPid
+	def getXRPObject(self,XRPid):
+		raise NotImplementedError()
 
-	def createnewXRP(XRPid):
-		xrpOBJ = None
-		if XRPid == LOAD_IMAGE_XRP:
-			xrpOBJ = loadImageXRP(r)
-		elif XRPid == RENDER_XRP:
-			xrpOBJ = renderImageXRP(r)
-		elif XRPid == NOISYCOMP_XRP:
-			xrpOBJ = noisyImageCompareXRP(r)
-		else:
+	def execXRPFunc(self,XRPid,args): #Child class should implement this - contains dictionary of custom Objects per XRPid
+		raise NotImplementedError()
+
+	def getLogLikelihood(self,XRPid,args):
+		raise NotImplementedError()
+
+	def createnewXRP(self,XRPid):
+		self.MMU[XRPid] = self.getXRPObject(XRPid)
+		if self.MMU[XRPid] is None:
 			print "[ERROR] In createnewXRP - XRPid unindentified\n"
-			return None
-		MMU[XRPid] = xrpOBJ
-		return xrpOBJ
+		return self.MMU[XRPid]
 
+	#Message format: <CMD>:<XRPid>:<args[1...N]>
+	def dispatch(self,message):
+		#print message
+		message = message.split(":")
+		cmd = message[0]
+		XRPid = int(message[1])
 
-def dispatch(message):
-	#print message
-	message = message.split(":")
-	cmd = message[0]
-	XRPid = int(message[1])
+		if cmd == "LoadRemoteXRP":
+			xrpOBJ = self.createnewXRP(XRPid)
+			
+			self.socket.send(str(xrpOBJ.id_of_this_xrp))
 
-	if cmd == "LoadRemoteXRP":
-		xrpOBJ = createnewXRP(XRPid)
-		
-		socket.send(str(xrpOBJ.id_of_this_xrp))
+			message = self.socket.recv()
+			self.socket.send(str(xrpOBJ.is_scorable))
 
-		message = socket.recv()
-		socket.send(str(xrpOBJ.is_scorable))
+			message = self.socket.recv()
+			self.socket.send(str(xrpOBJ.is_random_choice))
 
-		message = socket.recv()
-		socket.send(str(xrpOBJ.is_random_choice))
+			message = self.socket.recv()
+			self.socket.send(str(xrpOBJ.name))
+			return 
 
-		message = socket.recv()
-		socket.send(str(xrpOBJ.name))
-		return 
+		elif cmd == "TemplateForExtendedXRP":
+			id_of_XRP = self.execXRPFunc(XRPid,message[2:])
+			self.socket.send(str(id_of_XRP))
 
-	elif cmd == "TemplateForExtendedXRP":
-		if XRPid >= 10: #this is a hack!
-			XRPid = 10
-		MMU[XRPid].execFunc(message[2:])
-		socket.send(str(MMU[XRPid].id_of_this_xrp)) #in our case xrpOBJid is same as XRPid
+		elif cmd == "GetLogL":
+			logscore = self.getLogLikelihood(XRPid, message[2:])
+			self.socket.send(logscore)
 
-	elif cmd == "GetLogL":
-		if XRPid >=RENDER_XRP: #this is a hack!
-			XRPid = RENDER_XRP
-		logscore = str(MMU[XRPid].getLogLikelihood(int(message[2]),float(message[3])))
-		#print MMU[XRPid].name, "| getlog:", logscore
-		socket.send(logscore)
+		else:
+			print "[ERROR] In dispatch - cannot recognize OPCODE"
+			return -1
 
-	else:
-		print "[ERROR] In dispatch - cannot recognize OPCODE"
-		return -1
-
-
-while True:
-	#print "Waiting for clients ..."
-	message = socket.recv()
-	#print "Recieved reply", "[", message, "]"
-	#print "###########"
-	ret = str(dispatch(message))
-	#print "###########"
-	#print "Sending request"	, "...", ret
 

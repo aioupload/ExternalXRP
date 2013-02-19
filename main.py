@@ -1,9 +1,11 @@
+#tejask@mit.edu - MIT Probabilistic Computing Group
+
 import pdb
 import scipy
 import os, sys
 from scipy import stats
 from scipy import special
-lib_path = os.path.abspath('renderengine/MQXRP')
+lib_path = os.path.abspath('src')
 sys.path.append(lib_path)
 
 lib_path = os.path.abspath('ProbabilisticEngineTestSuite')

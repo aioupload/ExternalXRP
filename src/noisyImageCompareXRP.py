@@ -1,3 +1,5 @@
+#tejask@mit.edu - MIT Probabilistic Computing Group
+
 import numpy as np
 from matplotlib import *
 import matplotlib.cm as cm
@@ -29,7 +31,7 @@ class noisyImageCompareXRP:
 		self.renderer = renderer
 		self.logl = dict()
 
-	def execFunc(self,args):
+	def execXRP(self,args):
 		return
 
 	def getLogLikelihood(self,imageid,pflip):

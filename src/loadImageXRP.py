@@ -1,3 +1,4 @@
+#tejask@mit.edu - MIT Probabilistic Computing Group
 
 class loadImageXRP:
 	def __init__(self,renderer):
@@ -7,7 +8,7 @@ class loadImageXRP:
 		self.name = "loadImageXRP"
 		self.renderer = renderer
 
-	def execFunc(self,args):
+	def execXRP(self,args):
 		self.renderer.loadImage("")
 
 	def getLogLikelihood(self,xrpid,pflip):
