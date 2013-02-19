@@ -5,8 +5,6 @@ import scipy
 import os, sys
 from scipy import stats
 from scipy import special
-lib_path = os.path.abspath('src')
-sys.path.append(lib_path)
 
 lib_path = os.path.abspath('ProbabilisticEngineTestSuite')
 sys.path.append(lib_path)
