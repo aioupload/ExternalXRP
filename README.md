@@ -5,7 +5,7 @@ External XRP Interface
 
 ### To try demo:
 
-- Ensure venture is running
+- Ensure venture is running. Please use : git@github.com:mrkulk/ventureXRP.git
 
 - After cloning, go to /src folder
 
