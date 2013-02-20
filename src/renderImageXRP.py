@@ -1,4 +1,5 @@
 #tejask@mit.edu - MIT Probabilistic Computing Group
+from numpy import *
 
 class renderImageXRP:
 	def __init__(self,renderer):
@@ -10,7 +11,7 @@ class renderImageXRP:
 
 	def execXRP(self,args):
 		things = []
-		things.append({'left':int(args[0]), 'top':int(args[1]), 'id':chr(int(args[2])+65), 'size':int(args[3]), 'blur_sigsq':int(float(args[4]))})
+		things.append({'left':int(args[0]), 'top':int(args[1]), 'id':chr(int(args[2])+65), 'size':int(args[3]), 'blur_sigsq':floor(float(args[4]))})
 		self.renderer.get_rendered_image(things)
 		#this is a big hack
 		self.id_of_this_xrp = self.id_of_this_xrp + 1

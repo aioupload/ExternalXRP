@@ -25,20 +25,13 @@ class stochastic_test(venture_infrastructure.venture_infrastructure):
     
     MyRIPL.clear() # To delete previous sessions data.
    
-    MyRIPL.assume("posx", lisp_parser.parse("(uniform-discrete 20 160)"))
-    MyRIPL.assume("posy", lisp_parser.parse("(uniform-discrete 20 160)"))
+    MyRIPL.assume("posx", lisp_parser.parse("(uniform-discrete 0 180)"))
+    MyRIPL.assume("posy", lisp_parser.parse("(uniform-discrete 0 180)"))
     MyRIPL.assume("size", lisp_parser.parse("(uniform-discrete 30 60)"))
     MyRIPL.assume("id", lisp_parser.parse("(uniform-discrete 0 25)"))
-    MyRIPL.assume("blur", lisp_parser.parse("(* (beta 1 3) 40)"))
+    MyRIPL.assume("blur", lisp_parser.parse("(* (beta 1 0.9) 40)"))
     MyRIPL.assume("alpha", lisp_parser.parse("(uniform-continuous 0.01 8)"))    
     MyRIPL.assume("pflip", lisp_parser.parse("(beta 1 alpha)"))
-
-    #### REMOVE LATER
-    """MyRIPL.observe("posx",120)
-    MyRIPL.observe("posy", 90)
-    MyRIPL.observe("blur", 0.0)
-    MyRIPL.observe("size", 40)"""
-    #### REMOVE LATER ENDS
 
     MyRIPL.assume("LOAD-IMAGE", lisp_parser.parse("1"))
     MyRIPL.assume("RENDER-IMAGE", lisp_parser.parse("10"))

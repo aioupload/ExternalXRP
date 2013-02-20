@@ -123,7 +123,7 @@ class Renderer:
 		self.state['blur'] = True
 
 		things = []
-		things.append({'id':'A', 'size':40, 'left':120, 'top':90,'blur_sigsq':0})
+		things.append({'id':'C', 'size':50, 'left':120, 'top':90,'blur_sigsq':0})
 		#things.append({'id':'Z', 'size':20, 'left':0, 'top':100,'blur_sigsq':10})
 		#things.append({'id':'C', 'size':30, 'left':40, 'top':120,'blur_sigsq':0})
 		#things.append({'id':'E', 'size':50, 'left':140, 'top':160,'blur_sigsq':3})
