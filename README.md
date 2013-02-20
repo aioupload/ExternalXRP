@@ -5,9 +5,9 @@ External XRP Interface
 
 ### To try demo:
 
-- Ensure venture is running. Please use : git@github.com:mrkulk/ventureXRP.git
+- Ensure venture is running. Please use : `git@github.com:mrkulk/ventureXRP.git`
 
-- After cloning, go to /src folder
+- After cloning, go to `/src` folder
 
 - Start running XRP server by calling `python run.py`
 
