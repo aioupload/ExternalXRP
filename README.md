@@ -11,4 +11,4 @@ External XRP Interface
 
 - Start running XRP server by calling `python run.py`
 
-- Now run Venture program by calling `python main.py`
+- IMPORTANT: Skip this if you want to run other program otherwise run Venture program (captcha) by calling `python main.py`. 
