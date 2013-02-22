@@ -16,9 +16,25 @@ from itertools import *
 import Renderer
 from matplotlib import pyplot
 from matplotlib.backends.backend_pdf import PdfPages
-
+import matplotlib.pyplot as plt
+import pylab
+import Image
+from numpy import *
 
 class stochastic_test(venture_infrastructure.venture_infrastructure):
+
+  def initPlottingHarness(self,baselineIm,im,X,logsArray,cnt):
+    self.f = pylab.figure()
+    self.f.add_subplot(3,1,1)
+    pylab.imshow(baselineIm)
+    self.f.add_subplot(3,1,2)
+    pylab.imshow(im)
+    self.f.add_subplot(3,1,3)
+    pyplot.plot( X, logsArray, '-' )
+    pyplot.xlabel( 'Iterations' )
+    pyplot.ylabel( 'Logscore' )
+    pylab.savefig('data/test'+str(cnt)+'.png')
+
 
   def LoadProgram(self):
     MyRIPL = self.RIPL
@@ -52,9 +68,12 @@ class stochastic_test(venture_infrastructure.venture_infrastructure):
     r.state['blur'] = True
 
     logsArray = []
+    toInferImage = Image.open("demo.jpg").convert("L")
+    toInferImage = asarray(toInferImage)
+
     cnt = 0
-    while cnt < 600:
-        MyRIPL.infer(50)
+    while cnt < 200:
+        MyRIPL.infer(100)
         posx = MyRIPL.report_value(1)
         posy = MyRIPL.report_value(2)
         size = MyRIPL.report_value(3)
@@ -67,24 +86,19 @@ class stochastic_test(venture_infrastructure.venture_infrastructure):
         things = []
         things.append({'id':chr(int(_id)+65), 'size':size, 'left':posx, 'top':posy,'blur_sigsq':blur})
         im = r.get_rendered_image(things)
-        scipy.misc.imsave('inference.jpg', im)
+        #scipy.misc.imsave('inference.jpg', im)
         logscore = MyRIPL.logscore()
         logsArray.append(logscore['logscore'])
         print 'LOGSCORE:', logscore, "|", cnt
         cnt = cnt + 1
-
-    X = range(cnt)
-    pyplot.plot( X, logsArray, '-' )
-    pyplot.xlabel( 'Iterations' )
-    pyplot.ylabel( 'Logscore' )
-    pyplot.savefig( 'Simple.png' )
-    pyplot.show()
+        self.initPlottingHarness(toInferImage,im,range(cnt),logsArray,cnt)
 
     """ # add directives needed
     directives=list()
     directives.append(last_directive)
 
     self.directives = directives"""
+
 
   def __init__(self):
     import os.path
