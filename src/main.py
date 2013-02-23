@@ -13,7 +13,7 @@ import client
 import lisp_parser # From here: http://norvig.com/lispy.html
 import venture_infrastructure
 from itertools import *
-import Renderer
+import openGLText
 from matplotlib import pyplot
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
@@ -33,7 +33,7 @@ class stochastic_test(venture_infrastructure.venture_infrastructure):
     pyplot.plot( X, logsArray, '-' )
     pyplot.xlabel( 'Iterations' )
     pyplot.ylabel( 'Logscore' )
-    pylab.savefig('data/test'+str(cnt)+'.png')
+    pylab.savefig('dump/test'+str(cnt)+'.png')
 
 
   def LoadProgram(self):
@@ -62,18 +62,15 @@ class stochastic_test(venture_infrastructure.venture_infrastructure):
 
     MyRIPL.observe(lisp_parser.parse("(noisy-image-compare test-image rendered-image pflip)"), "true")
 
-    r = Renderer.Renderer()
-    r.state = dict()
-    r.state['params'] = {'room_self.size_x':r.size_x, 'room_self.size_y':r.size_y}
-    r.state['blur'] = True
+    r = openGLText.openGLText()
 
     logsArray = []
     toInferImage = Image.open("demo.jpg").convert("L")
     toInferImage = asarray(toInferImage)
 
     cnt = 0
-    while cnt < 200:
-        MyRIPL.infer(100)
+    while cnt < 20:
+        MyRIPL.infer(1000)
         posx = MyRIPL.report_value(1)
         posy = MyRIPL.report_value(2)
         size = MyRIPL.report_value(3)
@@ -86,7 +83,7 @@ class stochastic_test(venture_infrastructure.venture_infrastructure):
         things = []
         things.append({'id':chr(int(_id)+65), 'size':size, 'left':posx, 'top':posy,'blur_sigsq':blur})
         im = r.get_rendered_image(things)
-        #scipy.misc.imsave('inference.jpg', im)
+        scipy.misc.imsave('inference.jpg', im)
         logscore = MyRIPL.logscore()
         logsArray.append(logscore['logscore'])
         print 'LOGSCORE:', logscore, "|", cnt

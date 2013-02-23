@@ -4,6 +4,7 @@ import os, sys
 from loadImageXRP import *
 from renderImageXRP import *
 from noisyImageCompareXRP import *
+from openGLText import *
 from Renderer import *
 
 lib_path = os.path.abspath('../')
@@ -21,7 +22,7 @@ class runner(XRPServer):
 
 	def __init__(self):
 		super(runner, self).__init__()
-		self.r = Renderer()
+		self.r = openGLText()
 
 
 	def getXRPObject(self,XRPid):
