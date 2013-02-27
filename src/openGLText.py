@@ -18,6 +18,8 @@ import pylab
 from scipy.ndimage.filters import *
 import numpy.random as npr
 import scipy
+import pylab
+from matplotlib import pyplot
 
 
 width,height = (200,200)
@@ -43,17 +45,88 @@ class openGLText:
         self.state['blur'] = True
         self.resolution = SIZEX*SIZEY
 
+        self.pool = dict()
+
+
+
     def loadImage(self,filename):
         self.observedIm = pickle.load(open("demo.pkl","rb")) #Image.load('filename')
         return 1
 
-    def getLogLikelihood(self,pflip):
+
+
+    def getLogLikelihood(self,imageid,pflip):
+        if self.pool.has_key(imageid):
+            intersection = self.pool[imageid]['intersection']
+        else:
+            compound = self.currentIm+self.observedIm
+            intersection_ones = len(np.where(compound == 2)[0])
+            intersection_zeros = len(np.where(compound == 0)[0])
+            intersection = intersection_zeros + intersection_ones
+            self.pool[imageid] = {'intersection':intersection}
+
+        self.loglikelihood = intersection*log(1-pflip) + (self.resolution - intersection)*log(pflip)
+        print pflip, self.loglikelihood, intersection, self.resolution 
+
+        return self.loglikelihood
+
+
+
+    def OLDgetLogLikelihood(self,pflip):
         compound = self.currentIm+self.observedIm
         intersection_ones = len(np.where(compound == 2)[0])
         intersection_zeros = len(np.where(compound == 0)[0])
         intersection = intersection_zeros + intersection_ones
         self.loglikelihood = intersection*log(1-pflip) + (self.resolution - intersection)*log(pflip)
+        print pflip, self.loglikelihood, intersection, self.resolution
+            
         return self.loglikelihood
+
+    def makeGraph(self,fname):
+        f = pylab.figure()
+        bin = []
+        X = []
+        drange = arange(0.05,1.0,0.05)
+        CNT = 0
+        for i in drange:
+            X.append(CNT)
+            L = self.getLogLikelihood(i)
+            bin.append(L)
+            CNT += 1
+
+        pdb.set_trace()
+        #Normalizing
+        m = max(bin)
+        bin -= log(sum(exp(bin-m))) + m
+        bin = exp(bin)
+
+        f.add_subplot(111,title='Marginal')
+        pyplot.plot( X, bin, '-' )
+        pyplot.xlabel( 'Support' )
+        pyplot.ylabel( 'Probability' )
+        pylab.savefig(fname)
+
+
+    def testPFLIP(self):
+        glViewport(0,0,width,height)
+
+        things = []
+        things.append({'id':'C', 'size':30, 'left':120, 'top':90,'blur_sigsq':0})
+        im = self.get_rendered_image(things)
+        self.observedIm = im
+
+        things = []
+        things.append({'id':'C', 'size':30, 'left':120, 'top':90,'blur_sigsq':0})
+        im = self.get_rendered_image(things)
+        self.currentIm = im
+        self.makeGraph("overlap.png")
+
+        things = []
+        things.append({'id':'C', 'size':30, 'left':30, 'top':30,'blur_sigsq':0})
+        im = self.get_rendered_image(things)
+        self.currentIm = im
+        self.makeGraph("NONoverlap.png")
+
 
 
     def convSurfaceToImg(self,BLUR):
@@ -96,7 +169,7 @@ class openGLText:
     def sample_from_prior(self):
         glViewport(0,0,width,height)
         things = []
-        things.append({'id':'C', 'size':60, 'left':120, 'top':90,'blur_sigsq':0})
+        things.append({'id':'C', 'size':30, 'left':120, 'top':90,'blur_sigsq':0})
         t1=time.time()
         im = self.get_rendered_image(things)
         pickle.dump(im,open("demo.pkl","wb"))
@@ -107,4 +180,5 @@ class openGLText:
 
 #r=openGLText()
 #r.sample_from_prior()
+#r.testPFLIP()
 
