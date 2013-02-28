@@ -26,7 +26,7 @@ width,height = (200,200)
 SIZEX = width
 SIZEY = height
 REFLECTANCE_THRESHOLD = 0
-FONT_SIZE = 30
+FONT_SIZE = 100
 
 class openGLText:
     def __init__(self):
@@ -66,7 +66,7 @@ class openGLText:
             self.pool[imageid] = {'intersection':intersection}
 
         self.loglikelihood = intersection*log(1-pflip) + (self.resolution - intersection)*log(pflip)
-        print pflip, self.loglikelihood, intersection, self.resolution 
+        #print pflip, self.loglikelihood, intersection, self.resolution 
 
         return self.loglikelihood
 
@@ -78,7 +78,7 @@ class openGLText:
         intersection_zeros = len(np.where(compound == 0)[0])
         intersection = intersection_zeros + intersection_ones
         self.loglikelihood = intersection*log(1-pflip) + (self.resolution - intersection)*log(pflip)
-        print pflip, self.loglikelihood, intersection, self.resolution
+        #print pflip, self.loglikelihood, intersection, self.resolution
             
         return self.loglikelihood
 
@@ -169,14 +169,23 @@ class openGLText:
     def sample_from_prior(self):
         glViewport(0,0,width,height)
         things = []
-        things.append({'id':'C', 'size':30, 'left':120, 'top':90,'blur_sigsq':0})
+        #things.append({'id':'C', 'size':70, 'left':20, 'top':50,'blur_sigsq':2})
+        things.append({'id':'D', 'size':50, 'left':55, 'top':70,'blur_sigsq':1.3})
+        things.append({'id':'E', 'size':45, 'left':80, 'top':60,'blur_sigsq':0})
+        things.append({'id':'A', 'size':60, 'left':100, 'top':75,'blur_sigsq':1.2})
+        things.append({'id':'B', 'size':50, 'left':120, 'top':65,'blur_sigsq':0.6})
         t1=time.time()
         im = self.get_rendered_image(things)
+
+        for ii in range(width):
+            for jj in range(height):
+                if np.random.binomial(1,0.01) is 1:
+                    im[ii][jj] = 1
+
         pickle.dump(im,open("demo.pkl","wb"))
         scipy.misc.imsave('demo.jpg', im)
         t2=time.time()
         print t2-t1
-
 
 #r=openGLText()
 #r.sample_from_prior()

@@ -20,10 +20,28 @@ import matplotlib.pyplot as plt
 import pylab
 import Image
 from numpy import *
+import matplotlib.cm as cm
+
 
 RES = 200*200
+NUM_LETTERS = 3
 
 class stochastic_test(venture_infrastructure.venture_infrastructure):
+
+
+
+  def demoPlotting(self,baselineIm,im,X,logsArray,pxdisagree,pflip,blur,cnt):
+    self.f = pylab.figure()
+
+    self.f.add_subplot(121,title='Original Image')
+    pylab.imshow(baselineIm,cmap=pyplot.cm.binary)
+
+    self.f.add_subplot(122,title='Inferred Image')
+    pylab.imshow(im,cmap=pyplot.cm.binary)
+    pylab.savefig('demo/test'+str(cnt)+'.png')
+
+
+
 
   def initPlottingHarness(self,baselineIm,im,X,logsArray,pxdisagree,pflip,blur,cnt):
     self.f = pylab.figure()
@@ -61,30 +79,35 @@ class stochastic_test(venture_infrastructure.venture_infrastructure):
     pylab.savefig('dump/test'+str(cnt)+'.png')
 
 
+  def createCharacter(self):
+    chrs = dict()  
+    for i in range(NUM_LETTERS):
+        chrs[i]={'_posx':None};chrs[i]={'_posy':None};chrs[i]={'_size':None};chrs[i]={'_id_directive':None};chrs[i]={'_blur':None};
+        (chrs[i]['_posx'], tmp) = self.RIPL.assume("posx"+str(i), lisp_parser.parse("(uniform-discrete 0 140)"))
+        (chrs[i]['_posy'], tmp) = self.RIPL.assume("posy"+str(i), lisp_parser.parse("(uniform-discrete 0 100)"))
+        (chrs[i]['_size'], tmp) = self.RIPL.assume("size"+str(i), lisp_parser.parse("(uniform-discrete 30 70)"))
+        (chrs[i]['_id_directive'], tmp) =  self.RIPL.assume("id"+str(i), lisp_parser.parse("(uniform-discrete 0 2)"))
+        (chrs[i]['_blur'], tmp) = self.RIPL.assume("blur"+str(i), lisp_parser.parse("(uniform-continuous 0.0 10.0)"))
+    return chrs
+
+
+  def reportCharacters(self,args):
+    posx = self.RIPL.report_value(args['_posx'])
+    posy = self.RIPL.report_value(args['_posy'])
+    size = self.RIPL.report_value(args['_size'])
+    _id = self.RIPL.report_value(args['_id_directive'])
+    blur = self.RIPL.report_value(args['_blur'])
+    return posx, posy, size, _id, blur
+
+
 
   def LoadProgram(self):
     MyRIPL = self.RIPL
     
     MyRIPL.clear() # To delete previous sessions data.
-   
-    (_posx, tmp) = MyRIPL.assume("posx", lisp_parser.parse("(uniform-discrete 20 180)"))
-    (_posy, tmp) = MyRIPL.assume("posy", lisp_parser.parse("(uniform-discrete 20 180)"))
-    (_size, tmp) = MyRIPL.assume("size", lisp_parser.parse("(uniform-discrete 20 50)"))
-    (_id_directive, tmp) =  MyRIPL.assume("id", lisp_parser.parse("(uniform-discrete 0 25)"))
-    
-    #(_blur, tmp) = MyRIPL.assume("blur", lisp_parser.parse("(* (beta 1 6) 40)"))
-    (_blur, tmp) = MyRIPL.assume("blur", lisp_parser.parse("0"))
-    #(_blur, tmp) = MyRIPL.assume("blur", lisp_parser.parse("(uniform-continuous 0.0 10.0)"))
-    
 
-    (_alpha,tmp)= MyRIPL.assume("alpha", lisp_parser.parse("(uniform-continuous 0.01 8)"))    
-    
-    #Original :(_pflip,tmp)= MyRIPL.assume("pflip", lisp_parser.parse("(beta 1 alpha)"))
-    
-    #3choices
-    #MyRIPL.assume("pflipHelper", lisp_parser.parse("(uniform-discrete 0 2)"))
-    #(_pflip,tmp)= MyRIPL.assume("pflip", lisp_parser.parse("(if (= pflipHelper 0) 0.1 (if (= pflipHelper 1) 0.2 0.7) )"))
-    
+    chrs = self.createCharacter()
+
     (_pflip,tmp)= MyRIPL.assume("pflip", lisp_parser.parse("(uniform-continuous 0.0 1.0)"))
 
 
@@ -97,7 +120,11 @@ class stochastic_test(venture_infrastructure.venture_infrastructure):
     MyRIPL.assume("noisy-image-compare", lisp_parser.parse("(load-remote-xrp 4444 NOISY-COMP)"))    
 
     MyRIPL.assume("test-image", lisp_parser.parse("(load-image 0 0 0 0 0)")) #FIXME - dynamic args
-    MyRIPL.assume("rendered-image", lisp_parser.parse("(render-image posx posy id size blur)")) #FIXME - dynamic args
+    
+    arguments = ""
+    for i in range(NUM_LETTERS):
+        arguments += " posx"+str(i)+" "+"posy"+str(i)+" "+"id"+str(i)+" "+"size"+str(i)+" "+"blur"+str(i)
+    MyRIPL.assume("rendered-image", lisp_parser.parse("(render-image " + arguments + ")")) #FIXME - dynamic args
 
     MyRIPL.observe(lisp_parser.parse("(noisy-image-compare test-image rendered-image pflip)"), "true")
 
@@ -112,20 +139,17 @@ class stochastic_test(venture_infrastructure.venture_infrastructure):
 
     cnt = 0
     while cnt < 200:
-        MyRIPL.infer(100)
-        posx = MyRIPL.report_value(_posx)
-        posy = MyRIPL.report_value(_posy)
-        size = MyRIPL.report_value(_size)
-        _id = MyRIPL.report_value(_id_directive)
-        blur = MyRIPL.report_value(_blur)
-        alpha = MyRIPL.report_value(_alpha)
+        MyRIPL.infer(30)
+
         pflip = MyRIPL.report_value(_pflip)
-
-
-        print "left(120):",posx," top(90):", posy," size(30):", size,chr(_id+65)," blur: ",blur, "| alpha:", alpha,"| pflip:", pflip
-
         things = []
-        things.append({'id':chr(int(_id)+65), 'size':size, 'left':posx, 'top':posy,'blur_sigsq':blur})
+
+        for i in range(len(chrs)):
+            posx,posy,size,_id,blur = self.reportCharacters(chrs[i])
+            things.append({'id':chr(int(_id)+65), 'size':size, 'left':posx, 'top':posy,'blur_sigsq':blur})
+            print "left():",posx," top():", posy," size():", size,chr(_id+65)," blur: ",blur,"| pflip:", pflip
+        print "####\n"
+
         im = r.get_rendered_image(things)
         scipy.misc.imsave('inference.jpg', im)
         logscore = MyRIPL.logscore()
@@ -143,8 +167,8 @@ class stochastic_test(venture_infrastructure.venture_infrastructure):
         print 'LOGSCORE:', logscore, "|", cnt
         cnt = cnt + 1
 
-        self.initPlottingHarness(baselineIm,im,range(cnt),logsArray,pxdisagreeArr,pflipArr,blurArr,cnt)
-
+        #self.initPlottingHarness(baselineIm,im,range(cnt),logsArray,pxdisagreeArr,pflipArr,blurArr,cnt)
+        self.demoPlotting(baselineIm,im,range(cnt),logsArray,pxdisagreeArr,pflipArr,blurArr,cnt)
 
 
     """ # add directives needed
