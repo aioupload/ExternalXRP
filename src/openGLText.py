@@ -20,6 +20,7 @@ import numpy.random as npr
 import scipy
 import pylab
 from matplotlib import pyplot
+import Image
 
 
 width,height = (200,200)
@@ -51,6 +52,17 @@ class openGLText:
 
     def loadImage(self,filename):
         self.observedIm = pickle.load(open("demo.pkl","rb")) #Image.load('filename')
+        
+        """I = Image.open('demo.jpg')
+        I = I.convert('L')
+        for ii in range(height):
+            for jj in range(width):
+                if I.getpixel((ii,jj)) is not 0:
+                    I.putpixel((ii,jj),0)
+                else:
+                    I.putpixel((ii,jj),1)
+
+        self.observedIm = np.asarray(I)"""
         return 1
 
 
@@ -94,7 +106,6 @@ class openGLText:
             bin.append(L)
             CNT += 1
 
-        pdb.set_trace()
         #Normalizing
         m = max(bin)
         bin -= log(sum(exp(bin-m))) + m
@@ -143,6 +154,9 @@ class openGLText:
 
 
     def get_rendered_image(self,things):
+        if len(things) == 0:
+            im = self.convSurfaceToImg(0)
+
         for i in range(len(things)):
             self.drawText(things[i])
             bim = self.convSurfaceToImg(things[i]['blur_sigsq'])
@@ -169,18 +183,18 @@ class openGLText:
     def sample_from_prior(self):
         glViewport(0,0,width,height)
         things = []
-        #things.append({'id':'C', 'size':70, 'left':20, 'top':50,'blur_sigsq':2})
-        things.append({'id':'D', 'size':50, 'left':55, 'top':70,'blur_sigsq':1.3})
-        things.append({'id':'E', 'size':45, 'left':80, 'top':60,'blur_sigsq':0})
-        things.append({'id':'A', 'size':60, 'left':100, 'top':75,'blur_sigsq':1.2})
-        things.append({'id':'B', 'size':50, 'left':120, 'top':65,'blur_sigsq':0.6})
+        things.append({'id':'C', 'size':50, 'left':20, 'top':50,'blur_sigsq':0})
+        #things.append({'id':'D', 'size':50, 'left':55, 'top':70,'blur_sigsq':1.3})
+        #things.append({'id':'E', 'size':45, 'left':80, 'top':60,'blur_sigsq':0})
+        things.append({'id':'A', 'size':50, 'left':100, 'top':75,'blur_sigsq':1.2})
+        things.append({'id':'B', 'size':40, 'left':120, 'top':65,'blur_sigsq':0.6})
         t1=time.time()
         im = self.get_rendered_image(things)
 
-        for ii in range(width):
+        """for ii in range(width):
             for jj in range(height):
                 if np.random.binomial(1,0.01) is 1:
-                    im[ii][jj] = 1
+                    im[ii][jj] = 1"""
 
         pickle.dump(im,open("demo.pkl","wb"))
         scipy.misc.imsave('demo.jpg', im)
