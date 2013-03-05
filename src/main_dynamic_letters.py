@@ -24,7 +24,7 @@ import matplotlib.cm as cm
 
 
 RES = 200*200
-MAX_LETTERS = 3
+MAX_LETTERS = 10
 
 class stochastic_test(venture_infrastructure.venture_infrastructure):
 
@@ -106,16 +106,17 @@ class stochastic_test(venture_infrastructure.venture_infrastructure):
     
     MyRIPL.clear() # To delete previous sessions data.
 
-    MyRIPL.assume("letter-present", lisp_parser.parse("(mem (lambda(letter-id) (bernoulli 1.0)))"))
+    MyRIPL.assume("flip-relax", lisp_parser.parse("(mem (lambda(letter-id) (beta 6 1)))"))
+    MyRIPL.assume("letter-present", lisp_parser.parse("(mem (lambda(letter-id) (bernoulli (flip-relax letter-id) )))"))
     
     self.RIPL.assume("posx", lisp_parser.parse("(mem (lambda (letter-id) (uniform-discrete 0 150)))")) #0 -140 captcha
     self.RIPL.assume("posy", lisp_parser.parse("(mem (lambda (letter-id) (uniform-discrete 0 150)))")) #0 - 100 captcha #56-64 ocr
     self.RIPL.assume("size", lisp_parser.parse("(mem (lambda (letter-id) (uniform-discrete 30 70)))")) #30-70 captcha
     self.RIPL.assume("id", lisp_parser.parse("(mem (lambda (letter-id) (uniform-discrete 0 2)))")) #0 -2
-    self.RIPL.assume("blur", lisp_parser.parse("(mem (lambda (letter-id) (uniform-continuous 0.0 20.0)))")) # 0 - 10
+    self.RIPL.assume("blur", lisp_parser.parse("(mem (lambda (letter-id) (uniform-continuous 0.0 1.0)))")) # 0 - 10
 
     (_alpha,tmp) = MyRIPL.assume("alpha", lisp_parser.parse("(uniform-continuous 0 20)"))
-    (_pflip,tmp)= MyRIPL.assume("pflip", lisp_parser.parse("(beta 6 6)"))
+    (_pflip,tmp)= MyRIPL.assume("pflip", lisp_parser.parse("(beta 6 alpha)"))
 
 
     MyRIPL.assume("LOAD-IMAGE", lisp_parser.parse("1"))
@@ -150,7 +151,7 @@ class stochastic_test(venture_infrastructure.venture_infrastructure):
 
     cnt = 0
     while cnt < 200:
-        MyRIPL.infer(50)
+        MyRIPL.infer(200)
 
         pflip = MyRIPL.report_value(_pflip)
         things = []
