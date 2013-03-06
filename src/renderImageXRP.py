@@ -13,9 +13,9 @@ class renderImageXRP:
 
 	def execXRP(self,args):
 		things = []
-		for i in range(0,len(args),6):
-			if args[i+5] == '1':
-				things.append({'left':int(args[i]), 'top':int(args[i+1]), 'id':chr(int(args[i+2])+65), 'size':int(args[i+3]), 'blur_sigsq':floor(float(args[i+4]))})
+		for i in range(0,len(args),8):
+			if args[i+7] == '1':
+				things.append({'left':int(args[i]), 'top':int(args[i+1]), 'id':chr(int(args[i+2])+65), 'size_x':int(args[i+3]), 'size_y':int(args[i+4]), 'rotate_z':float(args[i+5]), 'blur_sigsq':floor(float(args[i+6]))})
 		
 		self.renderer.get_rendered_image(things)
 		#this is a big hack

@@ -24,7 +24,7 @@ import matplotlib.cm as cm
 
 
 RES = 200*200
-MAX_LETTERS = 10
+MAX_LETTERS = 5
 
 class stochastic_test(venture_infrastructure.venture_infrastructure):
 
@@ -82,41 +82,54 @@ class stochastic_test(venture_infrastructure.venture_infrastructure):
   def predictCharacteres(self):
     chrs = dict()  
     for i in range(MAX_LETTERS):
-        chrs[i]={'posx':None};chrs[i]={'posy':None};chrs[i]={'size':None};chrs[i]={'id':None};chrs[i]={'blur':None}; chrs[i]={'present':None};
+        chrs[i]={'posx':None};chrs[i]={'posy':None};chrs[i]={'size_x':None}; chrs[i]={'size_y':None}; chrs[i]={'rotate_z':None}; chrs[i]={'id':None};chrs[i]={'blur':None}; chrs[i]={'present':None};
         (chrs[i]['posx'], _) = self.RIPL.predict(lisp_parser.parse('(posx '+str(i)+')'))
         (chrs[i]['posy'], _) = self.RIPL.predict(lisp_parser.parse('(posy '+str(i)+')'))
-        (chrs[i]['size'], _) = self.RIPL.predict(lisp_parser.parse('(size '+str(i)+')'))
+        (chrs[i]['size_x'], _) = self.RIPL.predict(lisp_parser.parse('(size_x '+str(i)+')'))
+        (chrs[i]['size_y'], _) = self.RIPL.predict(lisp_parser.parse('(size_y '+str(i)+')'))
+        (chrs[i]['rotate_z'], _) = self.RIPL.predict(lisp_parser.parse('(rotate_z '+str(i)+')'))
         (chrs[i]['id'], _) = self.RIPL.predict(lisp_parser.parse('(id '+str(i)+')'))
-        (chrs[i]['blur'], _) = self.RIPL.predict(lisp_parser.parse('(blur '+str(i)+')'))
+        #(chrs[i]['blur'], _) = self.RIPL.predict(lisp_parser.parse('(blur '+str(i)+')'))
+        (chrs[i]['blur'], _) = self.RIPL.predict(lisp_parser.parse('blur'))
+        
         (chrs[i]['present'], _) = self.RIPL.predict(lisp_parser.parse('(letter-present '+str(i)+')'))
     return chrs
 
   def reportCharacters(self,chrs,i):
     posx = self.RIPL.report_value(chrs[i]['posx'])
     posy = self.RIPL.report_value(chrs[i]['posy'])
-    size = self.RIPL.report_value(chrs[i]['size'])
+    size_x = self.RIPL.report_value(chrs[i]['size_x'])
+    size_y = self.RIPL.report_value(chrs[i]['size_y'])
+    rotate_z = self.RIPL.report_value(chrs[i]['rotate_z'])
     _id = self.RIPL.report_value(chrs[i]['id'])
     blur = self.RIPL.report_value(chrs[i]['blur'])
     present = self.RIPL.report_value(chrs[i]['present'])
-    return posx,posy,size,_id,blur,present
+    return posx,posy,size_x,size_y,rotate_z,_id,blur,present
 
 
   def LoadProgram(self):
     MyRIPL = self.RIPL
     
     MyRIPL.clear() # To delete previous sessions data.
-
-    MyRIPL.assume("flip-relax", lisp_parser.parse("(mem (lambda(letter-id) (beta 6 1)))"))
+    
+    MyRIPL.assume("flip-relax", lisp_parser.parse("(mem (lambda(letter-id) (beta 1 2)))"))
     MyRIPL.assume("letter-present", lisp_parser.parse("(mem (lambda(letter-id) (bernoulli (flip-relax letter-id) )))"))
+
+    """MyRIPL.assume("flip-relax-relax", lisp_parser.parse("(mem (lambda(letter-id) (uniform-continuous 1.0 3.0)))"))
+    MyRIPL.assume("flip-relax", lisp_parser.parse("(mem (lambda(letter-id) (beta 10 (flip-relax-relax letter-id))))"))
+    MyRIPL.assume("letter-present", lisp_parser.parse("(mem (lambda(letter-id) (bernoulli (flip-relax letter-id) )))"))"""
     
     self.RIPL.assume("posx", lisp_parser.parse("(mem (lambda (letter-id) (uniform-discrete 0 150)))")) #0 -140 captcha
     self.RIPL.assume("posy", lisp_parser.parse("(mem (lambda (letter-id) (uniform-discrete 0 150)))")) #0 - 100 captcha #56-64 ocr
-    self.RIPL.assume("size", lisp_parser.parse("(mem (lambda (letter-id) (uniform-discrete 30 70)))")) #30-70 captcha
+    self.RIPL.assume("size_x", lisp_parser.parse("(mem (lambda (letter-id) (uniform-discrete 30 70)))")) #30-70 captcha
+    self.RIPL.assume("size_y", lisp_parser.parse("(mem (lambda (letter-id) (size_x letter-id)))")) #30-70 captcha
+    self.RIPL.assume("rotate_z", lisp_parser.parse("(mem (lambda (letter-id) (uniform-continuous -40.0 40.0)))")) #30-70 captcha    
     self.RIPL.assume("id", lisp_parser.parse("(mem (lambda (letter-id) (uniform-discrete 0 2)))")) #0 -2
-    self.RIPL.assume("blur", lisp_parser.parse("(mem (lambda (letter-id) (uniform-continuous 0.0 1.0)))")) # 0 - 10
+    #self.RIPL.assume("blur", lisp_parser.parse("(mem (lambda (letter-id) (gamma 1 1)))")) # 0 - 10
+    self.RIPL.assume("blur", lisp_parser.parse("(* 8 (beta 1 8))")) # 0 - 10
 
     (_alpha,tmp) = MyRIPL.assume("alpha", lisp_parser.parse("(uniform-continuous 0 20)"))
-    (_pflip,tmp)= MyRIPL.assume("pflip", lisp_parser.parse("(beta 6 alpha)"))
+    (_pflip,tmp)= MyRIPL.assume("pflip", lisp_parser.parse("(/ (beta 1 5) 2)")) #beta 6 1 works reasonably
 
 
     MyRIPL.assume("LOAD-IMAGE", lisp_parser.parse("1"))
@@ -131,14 +144,16 @@ class stochastic_test(venture_infrastructure.venture_infrastructure):
     
     arguments = ""
     for i in range(MAX_LETTERS):
-        arguments += " (posx "+str(i)+") " + " (posy "+str(i)+") " + " (id "+str(i)+") " + " (size "+str(i)+") " + " (blur "+str(i)+") " + " (letter-present "+str(i)+") "
-    
+        #arguments += " (posx "+str(i)+") " + " (posy "+str(i)+") " + " (id "+str(i)+") " + " (size_x "+str(i)+") " + " (size_y "+str(i)+") " + " (rotate_z "+str(i)+") " + " (blur "+str(i)+") " + " (letter-present "+str(i)+") "
+        arguments += " (posx "+str(i)+") " + " (posy "+str(i)+") " + " (id "+str(i)+") " + " (size_x "+str(i)+") " + " (size_y "+str(i)+") " + " (rotate_z "+str(i)+") " + " blur" + " (letter-present "+str(i)+") "
+        
 
     MyRIPL.assume("rendered-image", lisp_parser.parse("(render-image " + arguments + ")")) #FIXME - dynamic args
 
     MyRIPL.observe(lisp_parser.parse("(noisy-image-compare test-image rendered-image pflip)"), "true")
 
     r = openGLText.openGLText()
+    r.loadImage("")
 
     logsArray = []
     pxdisagreeArr = []
@@ -151,17 +166,17 @@ class stochastic_test(venture_infrastructure.venture_infrastructure):
 
     cnt = 0
     while cnt < 200:
-        MyRIPL.infer(200)
+        MyRIPL.infer(100)
 
         pflip = MyRIPL.report_value(_pflip)
         things = []
 
         for i in range(MAX_LETTERS):
-            posx,posy,size,_id,blur,present = self.reportCharacters(chrs,i)
-            print present
+            posx,posy,size_x,size_y,rotate_z,_id,blur,present = self.reportCharacters(chrs,i)
+            print present, pflip
             if present == True:
-                things.append({'id':chr(int(_id)+65), 'size':size, 'left':posx, 'top':posy,'blur_sigsq':blur})
-                print "left():",posx," top():", posy," size():", size,chr(_id+65)," blur: ",blur,"| pflip:", pflip
+                things.append({'id':chr(int(_id)+65), 'size_x':size_x, 'size_y':size_y, 'rotate_z':rotate_z, 'left':posx, 'top':posy,'blur_sigsq':blur})
+                print "left():",posx," top():", posy," size_x:", size_x, " size_y:", size_y, " rotate_z:", rotate_z,chr(_id+65)," blur: ",blur,"| pflip:", pflip
         print "####\n"
 
         im = r.get_rendered_image(things)

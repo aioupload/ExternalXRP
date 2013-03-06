@@ -48,6 +48,7 @@ class openGLText:
 
         self.pool = dict()
 
+        self.BLUR = None
 
 
     def loadImage(self,filename):
@@ -58,16 +59,35 @@ class openGLText:
         for ii in range(height):
             for jj in range(width):
                 if I.getpixel((ii,jj)) is not 0:
-                    I.putpixel((ii,jj),0)
-                else:
                     I.putpixel((ii,jj),1)
 
         self.observedIm = np.asarray(I)"""
+
         return 1
 
 
-
     def getLogLikelihood(self,imageid,pflip):
+        if self.pool.has_key(imageid):
+            intersection_ones = self.pool[imageid]['intersection_ones']
+            intersection_non_intersection = self.pool[imageid]['intersection_non_intersection']
+        else:
+            compound = self.currentIm+self.modObservedImage
+            intersection_ones = len(np.where(compound == 2)[0])
+            intersection_zeros = len(np.where(compound == 0)[0])
+            intersection_non_intersection = len(np.where(compound == 1)[0])
+            intersection = intersection_zeros + intersection_ones
+            self.pool[imageid] = {'intersection_ones':intersection_ones, 'intersection_non_intersection': intersection_non_intersection }
+
+
+        ratio = float(intersection_ones)/(intersection_ones+intersection_non_intersection)
+        #self.loglikelihood = -100*ratio*log(1-pflip)
+       
+        self.loglikelihood = 1000*(1-ratio)*log(pflip) + 1000*ratio*log(1-pflip)
+        print ratio, self.loglikelihood
+        return self.loglikelihood
+
+
+    def semiOLDgetLogLikelihood(self,imageid,pflip):
         if self.pool.has_key(imageid):
             intersection = self.pool[imageid]['intersection']
         else:
@@ -140,34 +160,62 @@ class openGLText:
 
 
 
-    def convSurfaceToImg(self,BLUR):
+    def convSurfaceToImg(self,BLUR,flag):
         im_str = pygame.image.tostring(self.WINDOW,'RGB')
         a = np.fromstring(im_str, dtype=np.uint8)
         bim = a.reshape(SIZEX,SIZEY, 3)
         bim = np.sum(bim, 2)
         bim = np.float64(bim)
-        bim = bim/np.max(bim)
-        if BLUR > 0:
-            bim = gaussian_filter(bim, BLUR, mode='wrap')
-            bim = npr.binomial(1, bim/np.max(bim))
+
+        if flag == 1:
+            bim = bim/np.max(bim)
+            if BLUR > 0:
+                bim = gaussian_filter(bim, BLUR, mode='wrap')
+                bim = npr.binomial(1, bim/np.max(bim))
+
         return bim
+
+
+    def clearGLCanvas(self):
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+        glPushMatrix();
+        glEnable(GL_DEPTH_TEST)
+        glClear(GL_DEPTH_BUFFER_BIT)
+        glPopMatrix()
 
 
     def get_rendered_image(self,things):
         if len(things) == 0:
-            im = self.convSurfaceToImg(0)
+            self.clearGLCanvas()
+            im = self.convSurfaceToImg(0,flag=0)
+            pygame.display.flip()
 
         for i in range(len(things)):
+            self.BLUR = things[i]['blur_sigsq']
             self.drawText(things[i])
-            bim = self.convSurfaceToImg(things[i]['blur_sigsq'])
+            bim = self.convSurfaceToImg(things[i]['blur_sigsq'],flag=1)
             if i == 0:
                 bim[bim.nonzero()] = 1
                 im = bim
             else:
                 im[bim.nonzero()] = 1
             pygame.display.flip()
-        #scipy.misc.imsave('all.jpg', im)
+
         self.currentIm = im
+        if isnan(im[0][0]):
+            pdb.set_trace()
+
+        #also blurring observed image
+        if self.BLUR is None:
+            self.BLUR = 0
+
+        self.modObservedImage = gaussian_filter(self.observedIm, self.BLUR, mode='wrap')
+        self.modObservedImage = npr.binomial(1, self.modObservedImage/np.max(self.modObservedImage))
+        self.modObservedImage[self.modObservedImage.nonzero()] = 1
+
+
+        scipy.misc.imsave('original_changing.jpg',  self.modObservedImage)        
+
         return im
 
     def drawText(self,thing):
@@ -175,19 +223,20 @@ class openGLText:
         glPushMatrix();
         glEnable(GL_DEPTH_TEST)
         glClear(GL_DEPTH_BUFFER_BIT) 
-        scaling = float(thing['size'])/FONT_SIZE 
-        glScalef(scaling,scaling,1)
+        glRotatef(thing['rotate_z'],0,0,1)
+        glScalef(float(thing['size_x'])/FONT_SIZE ,float(thing['size_y'])/FONT_SIZE ,1)
         self.our_font.glPrint (thing['left'],thing['top'],thing['id'])
         glPopMatrix()
 
     def sample_from_prior(self):
         glViewport(0,0,width,height)
+
         things = []
-        things.append({'id':'C', 'size':50, 'left':20, 'top':50,'blur_sigsq':0})
+        things.append({'id':'A', 'size_x':50,  'size_y': 50, 'left':50, 'top':50,'blur_sigsq':0, 'rotate_z':-20})
         #things.append({'id':'D', 'size':50, 'left':55, 'top':70,'blur_sigsq':1.3})
         #things.append({'id':'E', 'size':45, 'left':80, 'top':60,'blur_sigsq':0})
-        things.append({'id':'A', 'size':50, 'left':100, 'top':75,'blur_sigsq':1.2})
-        things.append({'id':'B', 'size':40, 'left':120, 'top':65,'blur_sigsq':0.6})
+        #things.append({'id':'A', 'size':50, 'left':80, 'top':75,'blur_sigsq':1})
+        #things.append({'id':'B', 'size':40, 'left':120, 'top':65,'blur_sigsq':1})
         t1=time.time()
         im = self.get_rendered_image(things)
 
