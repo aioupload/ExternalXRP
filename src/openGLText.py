@@ -82,7 +82,7 @@ class openGLText:
         ratio = float(intersection_ones)/(intersection_ones+intersection_non_intersection)
         #self.loglikelihood = -100*ratio*log(1-pflip)
        
-        self.loglikelihood = 1000*(1-ratio)*log(pflip) + 1000*ratio*log(1-pflip)
+        self.loglikelihood = 70*ratio*log(1-pflip) + 70*(1-ratio)*log(pflip)
         print ratio, self.loglikelihood
         return self.loglikelihood
 

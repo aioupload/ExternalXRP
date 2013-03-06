@@ -126,7 +126,7 @@ class stochastic_test(venture_infrastructure.venture_infrastructure):
     self.RIPL.assume("rotate_z", lisp_parser.parse("(mem (lambda (letter-id) (uniform-continuous -40.0 40.0)))")) #30-70 captcha    
     self.RIPL.assume("id", lisp_parser.parse("(mem (lambda (letter-id) (uniform-discrete 0 2)))")) #0 -2
     #self.RIPL.assume("blur", lisp_parser.parse("(mem (lambda (letter-id) (gamma 1 1)))")) # 0 - 10
-    self.RIPL.assume("blur", lisp_parser.parse("(* 8 (beta 1 8))")) # 0 - 10
+    self.RIPL.assume("blur", lisp_parser.parse("(* 10 (beta 1 10))")) # 0 - 10
 
     (_alpha,tmp) = MyRIPL.assume("alpha", lisp_parser.parse("(uniform-continuous 0 20)"))
     (_pflip,tmp)= MyRIPL.assume("pflip", lisp_parser.parse("(/ (beta 1 5) 2)")) #beta 6 1 works reasonably
